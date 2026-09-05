@@ -7,10 +7,10 @@ function add(files) {
   if (running) return;
   let rejected = 0;
   for (const file of files) {
-    if (!/\.(jpe?g|png|webp|bmp|tiff?)$/i.test(file.name) || file.size > 50 * 1024 * 1024 || !file.size || items.length >= 2000) { rejected++; continue; }
+    if (!/\.(jpe?g|png|webp|bmp|tiff?|heic|heif)$/i.test(file.name) || file.size > 50 * 1024 * 1024 || !file.size || items.length >= 2000) { rejected++; continue; }
     items.push({file, status:'waiting', preview:URL.createObjectURL(file)});
   }
-  $('message').textContent = rejected ? `Пропущено файлов: ${rejected}. Допустимы JPG, PNG, WebP, BMP, TIFF до 50 МБ, до 2000 файлов в очереди.` : '';
+  $('message').textContent = rejected ? `Пропущено файлов: ${rejected}. Допустимы JPG, PNG, WebP, BMP, HEIC/HEIF, TIF/TIFF до 50 МБ, до 2000 файлов в очереди.` : '';
   render();
 }
 function render() {
@@ -23,6 +23,7 @@ function render() {
   $('list').replaceChildren(...items.map(item => {
     const row = document.createElement('div'); row.className = `row ${item.status}`;
     const img = document.createElement('img'); img.src = item.preview; img.alt = ''; img.loading = 'lazy';
+    img.onerror = () => { img.hidden = true; }; // HEIC/TIFF previews are not supported by every browser.
     const details = document.createElement('div'); details.className = 'details';
     const name = document.createElement('strong'); name.textContent = item.file.name; name.title = item.file.name;
     const meta = document.createElement('small'); meta.textContent = bytes(item.file.size) + (item.result ? ` → ${bytes(item.result.size)}` : '');

@@ -12,6 +12,8 @@ import zipfile
 import zlib
 
 import app
+from PIL import Image
+from pillow_heif import register_heif_opener
 
 
 def png(width=48, height=32):
@@ -41,8 +43,8 @@ class Integration(unittest.TestCase):
         conn.close()
         return status, data
 
-    def encode(self, fmt='webp', keep='false', data=None, size=0):
-        query = urllib.parse.urlencode({'name':'тест.png','format':fmt,'quality':80,'keep':keep,'size':size})
+    def encode(self, fmt='webp', keep='false', data=None, size=0, name='тест.png'):
+        query = urllib.parse.urlencode({'name':name,'format':fmt,'quality':80,'keep':keep,'size':size})
         status, data = self.request('/api/compress?' + query, data if data is not None else png())
         self.assertEqual(status, 200, data)
         return json.loads(data)
@@ -61,6 +63,24 @@ class Integration(unittest.TestCase):
         result = self.encode('png', data=png(2000, 1000), size=1280)
         data = app.RESULTS[result['id']][0].read_bytes()
         self.assertEqual(struct.unpack('>II', data[16:24]), (1280,640))
+
+    def test_heic_and_tiff_inputs(self):
+        register_heif_opener()
+        for ext, format in [('HEIC', 'HEIF'), ('heif', 'HEIF'), ('tif', 'TIFF'), ('TIFF', 'TIFF')]:
+            image = Image.new('RGB', (96, 64), (200, 70, 20))
+            buffer = io.BytesIO()
+            image.save(buffer, format=format)
+            for output in ['webp', 'jpg', 'png']:
+                with self.subTest(input=ext, output=output):
+                    result = self.encode(output, data=buffer.getvalue(), name='фото.' + ext)
+                    path = app.RESULTS[result['id']][0]
+                    with Image.open(path) as converted:
+                        self.assertEqual(converted.size, (96, 64))
+                        self.assertLess(sum(abs(a-b) for a,b in zip(converted.convert('RGB').getpixel((40,30)), (200,70,20))), 35)
+                    self.assertFalse((path.parent / 'decoded.png').exists())
+
+    def test_corrupt_heic(self):
+        self.assertEqual(self.request('/api/compress?name=broken.heic', b'invalid heic')[0],422)
 
     def test_original_fallback(self):
         original = png()

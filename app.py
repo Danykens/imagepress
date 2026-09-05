@@ -8,6 +8,7 @@ import re
 import secrets
 import shutil
 import subprocess
+import sys
 import tempfile
 import threading
 import urllib.parse
@@ -22,7 +23,7 @@ RESULTS = {}
 LOCK = threading.Lock()
 SLOTS = threading.BoundedSemaphore(3)
 MAX_FILE = 50 * 1024 * 1024
-EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tif", ".tiff"}
+EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tif", ".tiff", ".heic", ".heif"}
 
 
 def ffmpeg():
@@ -35,6 +36,14 @@ def ffmpeg():
 
 
 def compress(source, target, fmt, quality, size):
+    if source.suffix.lower() in {".heic", ".heif"}:
+        decoded = source.with_name("decoded.png")
+        try:
+            subprocess.run([sys.executable, str(ROOT / "decode_heic.py"), str(source), str(decoded)],
+                           check=True, capture_output=True, timeout=120)
+            return compress(decoded, target, fmt, quality, size)
+        finally:
+            decoded.unlink(missing_ok=True)
     args = [ffmpeg(), "-hide_banner", "-loglevel", "error", "-nostdin", "-y",
             "-max_alloc", "268435456", "-protocol_whitelist", "file,pipe",
             "-threads", "1", "-i", str(source), "-frames:v", "1", "-map_metadata", "-1",
@@ -124,7 +133,7 @@ class Handler(BaseHTTPRequestHandler):
             name = Path(params.get("name", ["image.png"])[0].replace("\\", "/")).name
             ext = Path(name).suffix.lower()
             if ext not in EXTENSIONS:
-                raise ValueError("Поддерживаются JPG, PNG, WebP, BMP и TIFF")
+                raise ValueError("Поддерживаются JPG, PNG, WebP, BMP, HEIC/HEIF и TIF/TIFF")
             fmt = params.get("format", ["webp"])[0]
             quality = int(params.get("quality", ["80"])[0])
             size = int(params.get("size", ["0"])[0])
