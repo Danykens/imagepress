@@ -4,11 +4,11 @@ const vm = require('node:vm');
 const assert = require('node:assert/strict');
 const downloads = [], requests = [];
 function element() {
-  return {value:'',checked:false,dataset:{},listeners:{},children:[],
+  return {value:'',checked:false,dataset:{},style:{},listeners:{},children:[],
     addEventListener(name, fn){this.listeners[name]=fn;},
     setAttribute(name,value){this[name]=value;}, append(...nodes){this.children.push(...nodes);},
     replaceChildren(...nodes){this.children=nodes;}, remove(){},
-    click(){if(this.href) downloads.push(this.href);}, showModal(){},close(){}};
+    click(){if(this.href) downloads.push(this.href);}, showModal(){this.open=true;},close(){this.open=false;}};
 }
 const nodes = new Map();
 const get = id => {if(!nodes.has(id)) nodes.set(id,element()); return nodes.get(id);};
@@ -23,8 +23,11 @@ const context = vm.createContext({console,URLSearchParams,
 });
 vm.runInContext(readFileSync('static/app.js','utf8'),context);
 (async()=>{
+  get('settings-open').onclick(); assert.equal(get('settings-dialog').open,true);
+  get('settings-done').onclick(); assert.equal(get('settings-dialog').open,false);
   buttons[2].listeners.click(); assert.equal(get('quality').value,45); assert.equal(get('size').value,1920);
   buttons[3].listeners.click(); assert.equal(get('quality').value,80); assert.equal(get('size').value,0);
+  assert.match(get('settings-summary').textContent,/80%.*Исходный размер/);
   get('format').value='png'; buttons[0].listeners.click(); assert.equal(get('format').value,'webp');
   vm.runInContext("add([{name:'photo.png',size:100}])",context);
   await get('start').onclick(); assert.equal(get('start').disabled,false);

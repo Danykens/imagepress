@@ -2,40 +2,43 @@
 <html lang="ru">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Imagepress — сжатие изображений</title><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head>
 <body>
-<header><a class="brand" href="/">▧ <span>imagepress<span class="dot">.</span></span></a><span class="local"><i></i> Локально на вашем устройстве</span></header>
+<header><a class="brand" href="/"><span class="brand-icon">▧</span> imagepress<span class="dot">.</span></a><span class="local"><i></i> Только на вашем компьютере</span></header>
 <main>
-<section class="intro"><div class="eyebrow">ВАША ЛОКАЛЬНАЯ ФОТОМАСТЕРСКАЯ</div><h1>Меньше вес.<br><span>Больше возможностей.</span></h1><p>Добавьте фотографии, выберите степень сжатия и скачайте результат.<br class="desktop"> Всё на вашем компьютере. Оригиналы остаются у вас.</p></section>
-<div class="workspace"><section class="files-panel">
-<label class="drop" id="drop" tabindex="0" role="button" aria-label="Выбрать изображения"><input id="files" type="file" multiple accept=".jpg,.jpeg,.png,.webp,.bmp,.tif,.tiff,.heic,.heif" hidden><span class="upload-icon">↥</span><strong>Перетащите изображения сюда</strong><span>или <em>выберите файлы</em> на компьютере</span><small>JPG, PNG, WebP, BMP, HEIC, TIF/TIFF · до 50 МБ на файл · 100+ за раз</small></label>
-<div class="queue-head"><h2>Ваши изображения <span id="count">0</span></h2><button class="text-button" id="clear">Очистить</button></div>
-<div id="empty"><span>▧</span><p>Здесь появятся ваши изображения</p><small>Добавьте первую пачку — остальное возьмём на себя.</small></div>
-<div id="list" aria-live="polite"></div>
-</section>
-<aside><div class="settings-head"><h2>Настройки сжатия</h2><span>↗</span></div>
+<section class="intro"><div><div class="eyebrow">МЕНЬШЕ ВЕС. ТЕ ЖЕ ВПЕЧАТЛЕНИЯ.</div><h1>Сожмите фото.<span> Освободите место.</span></h1><p>Одна фотография или целая папка — всё в пару нажатий.</p></div><span class="intro-mark" aria-hidden="true">↙</span></section>
+<section class="control-panel" aria-label="Настройки сжатия">
+<div class="control-heading"><h2><span class="step">01</span> Выберите сжатие</h2><button id="settings-open" class="text-button">Свои настройки ↗</button></div>
 <div class="presets" role="group" aria-label="Пресеты сжатия">
-<button type="button" data-preset="light" aria-pressed="false"><strong>Лёгкое</strong><small>Больше деталей</small></button>
-<button type="button" data-preset="medium" aria-pressed="false"><strong>Среднее</strong><small>Меньше вес</small></button>
-<button type="button" data-preset="strong" aria-pressed="false"><strong>Сильное</strong><small>Компактный файл</small></button>
-<button type="button" data-preset="balance" aria-pressed="true"><strong>Баланс ✦</strong><small>Качество + размер</small></button>
+<button type="button" data-preset="light" aria-pressed="false"><span class="preset-icon">◔</span><strong>Лёгкое</strong><small>Сохранить больше деталей</small></button>
+<button type="button" data-preset="balance" aria-pressed="true"><span class="preset-icon">◑</span><strong>Баланс <em>Рекомендуем</em></strong><small>Качество и небольшой вес</small></button>
+<button type="button" data-preset="medium" aria-pressed="false"><span class="preset-icon">◕</span><strong>Среднее</strong><small>Для отправки и публикации</small></button>
+<button type="button" data-preset="strong" aria-pressed="false"><span class="preset-icon">●</span><strong>Сильное</strong><small>Когда важен размер файла</small></button>
 </div>
-<p id="preset-description" class="preset-description">Баланс: качество 80%, исходные размеры.</p>
-<label class="field">Формат результата<select id="format"><option value="webp">WebP — компактный и универсальный</option><option value="jpg">JPEG — для фотографий</option><option value="png">PNG — без потерь</option></select></label>
-<div class="field"><div class="label-row"><label for="quality">Качество</label><output id="quality-value">80%</output></div><input id="quality" type="range" min="1" max="100" value="80"><div class="range-labels"><span>Меньше размер</span><span>Больше деталей</span></div></div>
-<label class="field">Максимальная сторона<select id="size"><option value="0">Оригинальный размер</option><option value="1280">1280 px</option><option value="1920">1920 px · Full HD</option><option value="2560">2560 px</option><option value="3840">3840 px · 4K</option></select></label>
-<label class="check"><input type="checkbox" id="keep" checked><span>Не увеличивать вес<small>Сохранить оригинал, если результат больше и размер не менялся.</small></span></label>
-<div class="note" id="note">WebP сохраняет прозрачность и хорошо подходит для сайтов и повседневных задач.</div>
-<button id="start" class="primary" disabled>Сжать изображения <span>→</span></button><button id="stop" class="secondary" hidden>Остановить очередь</button>
-<details class="advanced"><summary>Расширенные настройки</summary>
-<label class="check"><input id="lossless" type="checkbox"><span>WebP без потерь<small>Точное сохранение пикселей при кодировании. HEIC HDR предварительно переводится в 8 бит.</small></span></label>
-<label class="field">Поворот по часовой стрелке<select id="rotation"><option value="0">Без поворота</option><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></label>
-<label class="field">Отражение<select id="flip"><option value="none">Без отражения</option><option value="horizontal">По горизонтали</option><option value="vertical">По вертикали</option></select></label>
-<label class="field">Фон для прозрачных изображений в JPEG <input id="background" type="color" value="#ffffff"></label>
-<p class="note">Поворот выполняется перед отражением. При преобразованиях сохранение меньшего оригинала отключается. Каждое сжатие начинается с загруженных оригиналов.</p>
-</details>
-<p class="privacy">⌁ Без загрузки в облако</p></aside></div>
-<section class="summary" id="summary" hidden><div class="result-overview"><div><small id="progress-label">Готово</small><strong id="savings"></strong></div><progress id="progress" max="100" value="0"></progress></div><div class="download-actions"><button class="primary" id="download-files" disabled>Скачать без ZIP ↓</button><button class="secondary" id="download" disabled>Скачать ZIP ↓</button></div><p id="download-hint">Каждое изображение — отдельным файлом. ZIP — все результаты в одном архиве.</p></section>
+<div class="configuration"><label for="format">Сохранить как</label><select id="format"><option value="webp">WebP</option><option value="jpg">JPEG</option><option value="png">PNG</option></select><span id="settings-summary">Качество 80% · Исходный размер</span></div>
+<p id="preset-description" class="sr-only">Баланс: качество 80%, исходные размеры.</p>
+</section>
+<section class="files-panel">
+<div class="queue-head"><h2><span class="step">02</span> Ваши изображения <span id="count">0</span></h2><button class="text-button" id="clear">Очистить список</button></div>
+<label class="drop" id="drop" tabindex="0" role="button" aria-label="Выбрать изображения"><input id="files" type="file" multiple accept=".jpg,.jpeg,.png,.webp,.bmp,.tif,.tiff,.heic,.heif" hidden><span class="upload-icon">＋</span><strong>Перетащите фото или <em>выберите файлы</em></strong><span>Можно сразу 100 и больше</span><small>JPG, PNG, WebP, HEIC, TIF и BMP · до 50 МБ на файл</small></label>
+<div id="empty"><span>Оригиналы остаются нетронутыми. Вы можете менять настройки и сжимать заново.</span></div>
+<div id="list" aria-live="polite"></div>
+<div class="run-bar"><p id="run-hint">Добавьте изображения, чтобы начать</p><div><button id="stop" class="secondary" hidden>Остановить</button><button id="start" class="primary" disabled>Сжать изображения →</button></div></div>
+</section>
+<section class="summary" id="summary" hidden><div class="result-overview"><div><small id="progress-label">Готово</small><strong id="savings"></strong></div><progress id="progress" max="100" value="0" aria-label="Прогресс сжатия"></progress></div><div class="download-actions"><button class="primary" id="download-files" disabled>Скачать без ZIP ↓</button><button class="secondary" id="download" disabled>Скачать ZIP ↓</button></div><p id="download-hint">Без ZIP — отдельные изображения. ZIP — один архив со всеми файлами.</p></section>
 <p id="message" role="status"></p>
-<footer><span>Сделано легче. С помощью FFmpeg.</span><span>Локальная обработка · Никаких подписок</span></footer>
+<footer><span>На вашем устройстве. Без облака.</span><span>Работает на FFmpeg</span></footer>
 </main>
-<dialog id="preview-dialog"><div class="preview-head"><strong id="preview-title"></strong><button id="preview-close" class="secondary">Закрыть ✕</button></div><p id="preview-status" role="status"></p><img id="preview-image" alt="Предпросмотр изображения"><a id="preview-download">Скачать результат ↓</a></dialog>
+<dialog id="settings-dialog" aria-labelledby="settings-title">
+<div class="dialog-heading"><div><div class="eyebrow">ПОД ВАШУ ЗАДАЧУ</div><h2 id="settings-title">Свои настройки</h2></div><button id="settings-close" class="icon-button" aria-label="Закрыть настройки">✕</button></div>
+<p class="dialog-description">Изменения применятся при следующем сжатии. Исходные фотографии сохраняются.</p>
+<div class="settings-grid">
+<section><h3>Качество и размер</h3><div class="field"><div class="label-row"><label for="quality">Качество</label><output id="quality-value">80%</output></div><input id="quality" type="range" min="1" max="100" value="80"><div class="range-labels"><span>Меньше вес</span><span>Больше деталей</span></div></div>
+<label class="field">Максимальная сторона<select id="size"><option value="0">Исходный размер</option><option value="1280">1280 px</option><option value="1920">1920 px</option><option value="2560">2560 px</option><option value="3840">3840 px</option></select></label>
+<label class="check"><input id="lossless" type="checkbox"><span>WebP без потерь<small>Без потери пикселей при кодировании. HEIC HDR предварительно переводится в 8 бит.</small></span></label>
+<label class="check"><input type="checkbox" id="keep" checked><span>Не увеличивать вес<small>Вернуть меньший оригинал, если не выбраны преобразования.</small></span></label></section>
+<section><h3>Изображение</h3><label class="field">Поворот по часовой стрелке<select id="rotation"><option value="0">Без поворота</option><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></label>
+<label class="field">Отражение<select id="flip"><option value="none">Без отражения</option><option value="horizontal">По горизонтали</option><option value="vertical">По вертикали</option></select></label>
+<label class="field color-field">Фон прозрачных областей в JPEG<input id="background" type="color" value="#ffffff"></label><p class="note" id="note">WebP сохраняет прозрачность. Для фотографий также подходит JPEG.</p></section>
+</div><div class="dialog-bottom"><span>Поворот → отражение → уменьшение</span><button id="settings-done" class="primary">Готово</button></div>
+</dialog>
+<dialog id="preview-dialog" aria-labelledby="preview-title"><div class="preview-head"><strong id="preview-title"></strong><button id="preview-close" class="secondary">Закрыть ✕</button></div><p id="preview-status" role="status"></p><img id="preview-image" alt="Предпросмотр изображения"><a id="preview-download">Скачать результат ↓</a></dialog>
 </body></html>

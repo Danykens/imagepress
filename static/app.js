@@ -25,6 +25,11 @@ function render() {
   $('start').disabled = running || downloading || !items.length;
   $('start').textContent = items.some(i => i.result) ? 'Сжать заново →' : 'Сжать изображения →';
   $('clear').disabled = running || downloading;
+  $('settings-open').disabled = running;
+  const extra = [Number($('rotation').value) ? `Поворот ${$('rotation').value}°` : '', $('flip').value !== 'none' ? 'Отражение' : ''].filter(Boolean);
+  $('settings-summary').textContent = [($('format').value === 'png' || ($('format').value === 'webp' && $('lossless').checked)) ? 'Без потерь' : `Качество ${$('quality').value}%`, Number($('size').value) ? `До ${$('size').value} px` : 'Исходный размер', ...extra].join(' · ');
+  $('run-hint').textContent = running ? 'Обрабатываем до 3 файлов одновременно…' : items.length ? 'Можно менять настройки и сжимать оригиналы заново' : 'Добавьте изображения, чтобы начать';
+  $('drop').style.minHeight = items.length ? '110px' : '';
   document.querySelectorAll('[data-preset]').forEach(button => { button.disabled = running; button.setAttribute('aria-pressed', String(button.dataset.preset === activePreset)); });
   $('stop').hidden = !running;
   for (const id of ['format','quality','size','keep','files','rotation','flip','lossless','background']) $(id).disabled = running || (id === 'quality' && ($('format').value === 'png' || ($('format').value === 'webp' && $('lossless').checked))) || (id === 'lossless' && $('format').value !== 'webp') || (id === 'background' && $('format').value !== 'jpg');
@@ -123,6 +128,10 @@ for(const id of ['quality', 'size', 'format', 'lossless']) $(id).addEventListene
 });
 window.addEventListener('beforeunload', e => {if(running){e.preventDefault();e.returnValue='';}});
 render();
+
+$('settings-open').onclick = () => $('settings-dialog').showModal();
+for (const id of ['settings-close','settings-done']) $(id).onclick = () => { $('settings-dialog').close(); render(); };
+for (const id of ['rotation','flip','background','keep']) $(id).addEventListener('input', render);
 
 $('lossless').onchange = render;
 let previewVersion = 0, previewUrl;
