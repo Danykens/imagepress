@@ -16,14 +16,16 @@
 <div class="configuration"><label for="format">Сохранить как</label><select id="format"><option value="webp">WebP</option><option value="jpg">JPEG</option><option value="png">PNG</option></select><span id="settings-summary">Качество 80% · Исходный размер</span></div>
 <p id="preset-description" class="sr-only">Баланс: качество 80%, исходные размеры.</p>
 </section>
+<section class="action-panel" aria-label="Сжатие и скачивание">
+<div class="run-bar"><p id="run-hint">Добавьте изображения, чтобы начать</p><div><button id="stop" class="secondary" hidden>Остановить</button><button id="start" class="primary" disabled>Сжать изображения →</button></div></div>
+<section class="summary" id="summary" hidden><div class="result-overview"><div><small id="progress-label">Готово</small><strong id="savings"></strong></div><progress id="progress" max="100" value="0" aria-label="Прогресс сжатия"></progress></div><div class="download-actions"><button class="primary" id="download-files" disabled>Скачать без ZIP ↓</button><button class="secondary" id="download" disabled>Скачать ZIP ↓</button></div><p id="download-hint">Без ZIP — отдельные изображения. ZIP — один архив со всеми файлами.</p></section>
+</section>
 <section class="files-panel">
 <div class="queue-head"><h2><span class="step">02</span> Ваши изображения <span id="count">0</span></h2><button class="text-button" id="clear">Очистить список</button></div>
 <label class="drop" id="drop" tabindex="0" role="button" aria-label="Выбрать изображения"><input id="files" type="file" multiple accept=".jpg,.jpeg,.png,.webp,.bmp,.tif,.tiff,.heic,.heif" hidden><span class="upload-icon">＋</span><strong>Перетащите фото или <em>выберите файлы</em></strong><span>Можно сразу 100 и больше</span><small>JPG, PNG, WebP, HEIC, TIF и BMP · до 50 МБ на файл</small></label>
 <div id="empty"><span>Оригиналы остаются нетронутыми. Вы можете менять настройки и сжимать заново.</span></div>
 <div id="list" aria-live="polite"></div>
-<div class="run-bar"><p id="run-hint">Добавьте изображения, чтобы начать</p><div><button id="stop" class="secondary" hidden>Остановить</button><button id="start" class="primary" disabled>Сжать изображения →</button></div></div>
 </section>
-<section class="summary" id="summary" hidden><div class="result-overview"><div><small id="progress-label">Готово</small><strong id="savings"></strong></div><progress id="progress" max="100" value="0" aria-label="Прогресс сжатия"></progress></div><div class="download-actions"><button class="primary" id="download-files" disabled>Скачать без ZIP ↓</button><button class="secondary" id="download" disabled>Скачать ZIP ↓</button></div><p id="download-hint">Без ZIP — отдельные изображения. ZIP — один архив со всеми файлами.</p></section>
 <p id="message" role="status"></p>
 <footer><span>На вашем устройстве. Без облака.</span><span>Работает на FFmpeg</span></footer>
 </main>

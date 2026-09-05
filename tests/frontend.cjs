@@ -2,6 +2,9 @@
 const {readFileSync} = require('node:fs');
 const vm = require('node:vm');
 const assert = require('node:assert/strict');
+const html = readFileSync('static/index.html','utf8');
+assert.ok(html.indexOf('id="start"') < html.indexOf('id="list"'));
+assert.ok(html.indexOf('id="download-files"') < html.indexOf('id="list"'));
 const downloads = [], requests = [];
 function element() {
   return {value:'',checked:false,dataset:{},style:{},listeners:{},children:[],
@@ -40,5 +43,15 @@ vm.runInContext(readFileSync('static/app.js','utf8'),context);
   vm.runInContext("add([{name:'second.png',size:100}])",context);
   await get('start').onclick(); await get('download-files').onclick();
   assert.equal(downloads.length,3);
+  const removeFirst = get('list').children[0].children.at(-1);
+  assert.equal(removeFirst.className,'remove-file');
+  vm.runInContext('running = true',context); removeFirst.onclick();
+  assert.equal(get('count').textContent,2);
+  vm.runInContext('running = false',context); removeFirst.onclick();
+  assert.equal(get('count').textContent,1);
+  await get('download-files').onclick(); assert.equal(downloads.length,4);
+  get('list').children[0].children.at(-1).onclick();
+  assert.equal(get('count').textContent,0); assert.equal(get('start').disabled,true);
+  assert.equal(get('download-files').disabled,true); assert.equal(get('summary').hidden,true);
   console.log('PASS: presets, repeated compression from originals, single and multiple non-ZIP downloads');
 })().catch(error=>{console.error(error);process.exitCode=1;});

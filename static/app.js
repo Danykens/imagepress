@@ -46,6 +46,9 @@ function render() {
     badge.textContent = item.status === 'waiting' ? 'В очереди' : item.status === 'working' ? 'Сжимаем…' : item.status === 'error' ? item.error : item.result.kept ? 'Оригинал меньше' : `${Math.round((1-item.result.size/item.file.size)*100)}% экономии`;
     row.append(thumb, details, badge);
     if (item.result) { const a = document.createElement('a'); a.href = `/api/file/${item.result.id}`; a.className = 'file-download'; a.textContent = '↓ Скачать файл'; a.download = item.result.name; a.title = `Скачать ${item.result.name} без ZIP`; row.append(a); }
+    const remove = document.createElement('button'); remove.className = 'remove-file'; remove.type = 'button';
+    remove.textContent = '✕'; remove.title = `Удалить ${item.file.name} из списка`; remove.setAttribute('aria-label', remove.title);
+    remove.disabled = running || downloading; remove.onclick = () => removeItem(item); row.append(remove);
     return row;
   }));
   const done = items.filter(i => i.result);
@@ -58,6 +61,15 @@ function render() {
   $('download').disabled = !done.length || running || downloading;
   $('download-files').disabled = !done.length || running || downloading;
   $('download-files').textContent = downloading ? 'Подготавливаем скачивание…' : done.length === 1 ? 'Скачать изображение без ZIP ↓' : `Скачать без ZIP · ${done.length} ↓`;
+}
+function removeItem(item) {
+  if (running || downloading) return;
+  const index = items.indexOf(item);
+  if (index < 0) return;
+  items.splice(index, 1);
+  URL.revokeObjectURL(item.preview);
+  $('message').textContent = `«${item.file.name}» удалено из списка. Оригинал на компьютере сохранён.`;
+  render();
 }
 $('files').addEventListener('change', e => { add(e.target.files); e.target.value = ''; });
 $('drop').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('files').click(); } });
