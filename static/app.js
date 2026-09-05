@@ -1,5 +1,11 @@
 const $ = id => document.getElementById(id);
-let items = [], running = false, stopped = false, token;
+let items = [], running = false, stopped = false, token, downloading = false, activePreset = 'balance';
+const presets = {
+  light: {quality:92, size:0, description:'Лёгкое: качество 92%, исходные размеры. Для сохранения деталей.'},
+  medium: {quality:70, size:2560, description:'Среднее: качество 70%, сторона до 2560 px. Для небольших файлов.'},
+  strong: {quality:45, size:1920, description:'Сильное: качество 45%, сторона до 1920 px. Потеря деталей заметнее.'},
+  balance: {quality:80, size:0, description:'Баланс: качество 80%, исходные размеры. Отправная точка для сравнения качества и веса.'}
+};
 const bytes = n => n < 1024 * 1024 ? `${(n / 1024).toFixed(1)} КБ` : `${(n / 1024 / 1024).toFixed(1)} МБ`;
 const config = fetch('/api/config').then(r => r.json()).then(c => token = c.token);
 config.catch(() => $('message').textContent = 'Сервер недоступен. Перезапустите приложение.');
@@ -16,9 +22,10 @@ function add(files) {
 function render() {
   $('count').textContent = items.length;
   $('empty').hidden = items.length > 0;
-  $('start').disabled = running || !items.length;
+  $('start').disabled = running || downloading || !items.length;
   $('start').textContent = items.some(i => i.result) ? 'Сжать заново →' : 'Сжать изображения →';
-  $('clear').disabled = running;
+  $('clear').disabled = running || downloading;
+  document.querySelectorAll('[data-preset]').forEach(button => { button.disabled = running; button.setAttribute('aria-pressed', String(button.dataset.preset === activePreset)); });
   $('stop').hidden = !running;
   for (const id of ['format','quality','size','keep','files','rotation','flip','lossless','background']) $(id).disabled = running || (id === 'quality' && ($('format').value === 'png' || ($('format').value === 'webp' && $('lossless').checked))) || (id === 'lossless' && $('format').value !== 'webp') || (id === 'background' && $('format').value !== 'jpg');
   $('list').replaceChildren(...items.map(item => {
@@ -33,7 +40,7 @@ function render() {
     const badge = document.createElement('span'); badge.className = 'badge';
     badge.textContent = item.status === 'waiting' ? 'В очереди' : item.status === 'working' ? 'Сжимаем…' : item.status === 'error' ? item.error : item.result.kept ? 'Оригинал меньше' : `${Math.round((1-item.result.size/item.file.size)*100)}% экономии`;
     row.append(thumb, details, badge);
-    if (item.result) { const a = document.createElement('a'); a.href = `/api/file/${item.result.id}`; a.textContent = 'Скачать'; a.download = item.result.name; a.title = `Скачать ${item.result.name}`; row.append(a); }
+    if (item.result) { const a = document.createElement('a'); a.href = `/api/file/${item.result.id}`; a.className = 'file-download'; a.textContent = '↓ Скачать файл'; a.download = item.result.name; a.title = `Скачать ${item.result.name} без ZIP`; row.append(a); }
     return row;
   }));
   const done = items.filter(i => i.result);
@@ -43,7 +50,9 @@ function render() {
   $('progress-label').textContent = `${running ? 'Обработка' : stopped ? 'Очередь остановлена' : 'Результаты'} · ${completed} из ${items.length}`;
   const before = done.reduce((a,i) => a+i.file.size,0), after = done.reduce((a,i) => a+i.result.size,0);
   $('savings').textContent = before ? `${bytes(before)} → ${bytes(after)} · ${Math.round((1-after/before)*100)}% экономии` : 'Готовим изображения…';
-  $('download').disabled = !done.length || running;
+  $('download').disabled = !done.length || running || downloading;
+  $('download-files').disabled = !done.length || running || downloading;
+  $('download-files').textContent = downloading ? 'Подготавливаем скачивание…' : done.length === 1 ? 'Скачать изображение без ZIP ↓' : `Скачать без ZIP · ${done.length} ↓`;
 }
 $('files').addEventListener('change', e => { add(e.target.files); e.target.value = ''; });
 $('drop').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('files').click(); } });
@@ -51,7 +60,7 @@ for (const event of ['dragenter','dragover']) $('drop').addEventListener(event, 
 for (const event of ['dragleave','drop']) $('drop').addEventListener(event, e => {e.preventDefault(); $('drop').classList.remove('over'); if(event === 'drop') add(e.dataTransfer.files);});
 window.addEventListener('dragover', e => e.preventDefault()); window.addEventListener('drop', e => e.preventDefault());
 $('quality').oninput = () => $('quality-value').textContent = `${$('quality').value}%`;
-$('format').onchange = () => { $('note').textContent = {webp:'WebP сохраняет прозрачность и хорошо подходит для сайтов и повседневных задач.',jpg:'JPEG подходит для фото. Прозрачный фон станет белым.',png:'PNG сжимается без потерь. Качество не регулируется; уменьшение размеров меняет изображение.'}[$('format').value]; render(); };
+$('format').onchange = () => { $('note').textContent = {webp:'WebP сохраняет прозрачность и хорошо подходит для сайтов и повседневных задач.',jpg:'JPEG подходит для фото. Цвет подложки для прозрачности выбирается в расширенных настройках.',png:'PNG сжимается без потерь. Качество не регулируется; уменьшение размеров меняет изображение.'}[$('format').value]; render(); };
 $('clear').onclick = () => { items.forEach(i => URL.revokeObjectURL(i.preview)); items = []; $('message').textContent = ''; render(); };
 $('stop').onclick = () => {stopped = true; $('stop').disabled = true; $('stop').textContent = 'Завершаем текущие файлы…';};
 $('start').onclick = async () => {
@@ -79,14 +88,39 @@ $('start').onclick = async () => {
   finally {running = false; render();}
 };
 $('download').onclick = async () => {
-  $('download').disabled = true; $('download').textContent = 'Собираем архив…';
+  downloading = true; render(); $('download').textContent = 'Собираем архив…';
   try {
     const response = await fetch('/api/zip', {method:'POST', headers:{'X-App-Token':token, 'Content-Type':'application/json'}, body:JSON.stringify(items.filter(i => i.result).map(i => i.result.id))});
     if (!response.ok) throw new Error('Не удалось собрать архив');
     const url = URL.createObjectURL(await response.blob()); const a = document.createElement('a'); a.href = url; a.download = 'imagepress.zip'; a.click(); setTimeout(() => URL.revokeObjectURL(url),60000);
   } catch(error) {$('message').textContent = error.message;}
-  finally {$('download').textContent = 'Скачать ZIP ↓'; render();}
+  finally {downloading = false; $('download').textContent = 'Скачать ZIP ↓'; render();}
 };
+$('download-files').onclick = async () => {
+  const results = items.filter(i => i.result).map(i => i.result);
+  if (!results.length || running || downloading) return;
+  downloading = true; render();
+  $('message').textContent = results.length > 1 ? 'Если браузер запросит разрешение на скачивание нескольких файлов, разрешите его. Также каждый файл можно скачать кнопкой в списке.' : '';
+  try {
+    for (const result of results) {
+      const a = document.createElement('a'); a.href = `/api/file/${result.id}`; a.download = result.name; document.body.append(a); a.click(); a.remove();
+      if(results.length > 1) await new Promise(resolve => setTimeout(resolve, 400));
+    }
+  } finally {downloading = false; render();}
+};
+document.querySelectorAll('[data-preset]').forEach(button => button.addEventListener('click', () => {
+  const preset = presets[button.dataset.preset];
+  if(running) return;
+  if($('format').value === 'png') { $('format').value = 'webp'; $('format').onchange(); }
+  $('quality').value = preset.quality; $('quality-value').textContent = `${preset.quality}%`;
+  $('size').value = preset.size; $('lossless').checked = false;
+  activePreset = button.dataset.preset;
+  $('preset-description').textContent = preset.description + ' Формат: ' + $('format').value.toUpperCase() + '.';
+  render();
+}));
+for(const id of ['quality', 'size', 'format', 'lossless']) $(id).addEventListener('input', () => {
+  activePreset = null; $('preset-description').textContent = 'Свои настройки. Можно сжать заново и сравнить результат.'; render();
+});
 window.addEventListener('beforeunload', e => {if(running){e.preventDefault();e.returnValue='';}});
 render();
 
