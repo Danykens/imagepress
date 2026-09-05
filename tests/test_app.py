@@ -82,6 +82,30 @@ class Integration(unittest.TestCase):
     def test_corrupt_heic(self):
         self.assertEqual(self.request('/api/compress?name=broken.heic', b'invalid heic')[0],422)
 
+    def test_advanced_settings_and_preview(self):
+        data = io.BytesIO()
+        source = Image.new('RGBA', (48, 32), (0, 0, 0, 0))
+        source.save(data, format='PNG')
+        status, body = self.request('/api/compress?name=a.png&format=jpg&rotation=90&flip=horizontal&background=000000&keep=true', data.getvalue())
+        self.assertEqual(status, 200, body)
+        result = json.loads(body)
+        self.assertFalse(result['kept'])
+        with Image.open(app.RESULTS[result['id']][0]) as image:
+            self.assertEqual(image.size, (32,48))
+            self.assertLess(max(image.getpixel((10,10))), 10)
+        source = Image.new('RGB', (48, 32), (101, 53, 217))
+        data = io.BytesIO(); source.save(data, format='PNG')
+        status, body = self.request('/api/compress?name=a.png&format=webp&lossless=true', data.getvalue())
+        self.assertEqual(status,200,body)
+        with Image.open(app.RESULTS[json.loads(body)['id']][0]) as image:
+            self.assertEqual(image.convert('RGB').tobytes(), source.tobytes())
+        data = io.BytesIO(); source.save(data, format='TIFF')
+        status, body = self.request('/api/preview?name=a.tif', data.getvalue())
+        self.assertEqual(status,200,body)
+        with Image.open(io.BytesIO(body)) as image:
+            self.assertEqual(image.size,(48,32))
+        self.assertEqual(self.request('/api/compress?name=a.png&rotation=13', png())[0],400)
+
     def test_original_fallback(self):
         original = png()
         result = self.encode('jpg', keep='true', data=original)

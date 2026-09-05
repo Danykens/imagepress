@@ -35,13 +35,13 @@ def ffmpeg():
     return imageio_ffmpeg.get_ffmpeg_exe()
 
 
-def compress(source, target, fmt, quality, size):
+def compress(source, target, fmt, quality, size, rotation=0, flip="none", lossless=False, background="ffffff"):
     if source.suffix.lower() in {".heic", ".heif"}:
         decoded = source.with_name("decoded.png")
         try:
             subprocess.run([sys.executable, str(ROOT / "decode_heic.py"), str(source), str(decoded)],
                            check=True, capture_output=True, timeout=120)
-            return compress(decoded, target, fmt, quality, size)
+            return compress(decoded, target, fmt, quality, size, rotation, flip, lossless, background)
         finally:
             decoded.unlink(missing_ok=True)
     args = [ffmpeg(), "-hide_banner", "-loglevel", "error", "-nostdin", "-y",
@@ -49,15 +49,22 @@ def compress(source, target, fmt, quality, size):
             "-threads", "1", "-i", str(source), "-frames:v", "1", "-map_metadata", "-1",
             "-filter_threads", "1", "-threads", "1"]
     filters = []
+    if rotation:
+        filters += {90: ["transpose=1"], 180: ["hflip", "vflip"], 270: ["transpose=2"]}[rotation]
+    if flip != "none":
+        filters.append({"horizontal": "hflip", "vertical": "vflip"}[flip])
     if size:
         filters.append(f"scale=w='min(iw,{size})':h='min(ih,{size})':force_original_aspect_ratio=decrease")
     if fmt == "jpg":
         # Flatten transparency onto white before JPEG encoding.
-        filters += ["format=rgba", "split[a][b];[a]lutrgb=r=255:g=255:b=255,colorchannelmixer=aa=1[bg];[bg][b]overlay=format=auto", "format=yuvj444p"]
+        r, g, b = (int(background[i:i+2], 16) for i in (0, 2, 4))
+        filters += ["format=rgba", f"split[a][b];[a]lutrgb=r={r}:g={g}:b={b},colorchannelmixer=aa=1[bg];[bg][b]overlay=format=auto", "format=yuvj444p"]
     if filters:
         args += ["-vf", ",".join(filters)]
     if fmt == "webp":
         args += ["-c:v", "libwebp", "-quality", str(quality), "-compression_level", "6"]
+        if lossless:
+            args += ["-lossless", "1"]
     elif fmt == "jpg":
         args += ["-c:v", "mjpeg", "-q:v", str(round(31 - quality * 29 / 100))]
     else:
@@ -127,7 +134,7 @@ class Handler(BaseHTTPRequestHandler):
                     self.end_headers()
                     shutil.copyfileobj(archive, self.wfile)
                 return
-            if url.path != "/api/compress":
+            if url.path not in {"/api/compress", "/api/preview"}:
                 return self.reply(404, {"error": "Не найдено"})
             params = urllib.parse.parse_qs(url.query)
             name = Path(params.get("name", ["image.png"])[0].replace("\\", "/")).name
@@ -137,6 +144,12 @@ class Handler(BaseHTTPRequestHandler):
             fmt = params.get("format", ["webp"])[0]
             quality = int(params.get("quality", ["80"])[0])
             size = int(params.get("size", ["0"])[0])
+            rotation = int(params.get("rotation", ["0"])[0])
+            flip = params.get("flip", ["none"])[0]
+            lossless = params.get("lossless", ["false"])[0] == "true"
+            background = params.get("background", ["ffffff"])[0].lstrip("#")
+            if rotation not in {0, 90, 180, 270} or flip not in {"none", "horizontal", "vertical"} or not re.fullmatch(r"[0-9a-fA-F]{6}", background):
+                raise ValueError("Некорректные расширенные настройки")
             if fmt not in {"webp", "jpg", "png"} or not 1 <= quality <= 100 or size not in {0, 1280, 1920, 2560, 3840}:
                 raise ValueError("Некорректные настройки")
             ident = secrets.token_hex(16)
@@ -153,8 +166,14 @@ class Handler(BaseHTTPRequestHandler):
                         out.write(chunk)
                         remaining -= len(chunk)
                 with SLOTS:
-                    compress(source, target, fmt, quality, size)
-                kept = params.get("keep", ["true"])[0] == "true" and not size and target.stat().st_size >= length
+                    if url.path == "/api/preview":
+                        target = directory / "preview.png"
+                        compress(source, target, "png", 80, 1280)
+                        preview = target.read_bytes()
+                        shutil.rmtree(directory)
+                        return self.reply(200, preview, "image/png")
+                    compress(source, target, fmt, quality, size, rotation, flip, lossless, background)
+                kept = params.get("keep", ["true"])[0] == "true" and not size and not rotation and flip == "none" and not lossless and (fmt != "jpg" or background.lower() == "ffffff") and target.stat().st_size >= length
                 result = source if kept else target
                 safe_stem = re.sub(r'[\x00-\x1f/:\\]', "_", Path(name).stem)[:160] or "image"
                 output_name = safe_stem + (ext if kept else "." + fmt)

@@ -18,8 +18,17 @@
 <label class="check"><input type="checkbox" id="keep" checked><span>Не увеличивать вес<small>Сохранить оригинал, если результат больше и размер не менялся.</small></span></label>
 <div class="note" id="note">WebP сохраняет прозрачность и хорошо подходит для сайтов и повседневных задач.</div>
 <button id="start" class="primary" disabled>Сжать изображения <span>→</span></button><button id="stop" class="secondary" hidden>Остановить очередь</button>
+<details class="advanced"><summary>Расширенные настройки</summary>
+<label class="check"><input id="lossless" type="checkbox"><span>WebP без потерь<small>Точное сохранение пикселей при кодировании. HEIC HDR предварительно переводится в 8 бит.</small></span></label>
+<label class="field">Поворот по часовой стрелке<select id="rotation"><option value="0">Без поворота</option><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></label>
+<label class="field">Отражение<select id="flip"><option value="none">Без отражения</option><option value="horizontal">По горизонтали</option><option value="vertical">По вертикали</option></select></label>
+<label class="field">Фон для прозрачных изображений в JPEG <input id="background" type="color" value="#ffffff"></label>
+<p class="note">Поворот выполняется перед отражением. При преобразованиях сохранение меньшего оригинала отключается. Каждое сжатие начинается с загруженных оригиналов.</p>
+</details>
 <p class="privacy">⌁ Без загрузки в облако</p></aside></div>
 <section class="summary" id="summary" hidden><div><small id="progress-label">Готово</small><strong id="savings"></strong></div><progress id="progress" max="100" value="0"></progress><button class="primary" id="download" disabled>Скачать ZIP ↓</button></section>
 <p id="message" role="status"></p>
 <footer><span>Сделано легче. С помощью FFmpeg.</span><span>Локальная обработка · Никаких подписок</span></footer>
-</main></body></html>
+</main>
+<dialog id="preview-dialog"><div class="preview-head"><strong id="preview-title"></strong><button id="preview-close" class="secondary">Закрыть ✕</button></div><p id="preview-status" role="status"></p><img id="preview-image" alt="Предпросмотр изображения"><a id="preview-download">Скачать результат ↓</a></dialog>
+</body></html>
