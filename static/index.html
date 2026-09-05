@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ru">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Imagepress — сжатие изображений</title><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head>
+<body>
+<header><a class="brand" href="/">▧ <span>imagepress<span class="dot">.</span></span></a><span class="local"><i></i> Локально на вашем устройстве</span></header>
+<main>
+<section class="intro"><div class="eyebrow">МЕНЬШЕ ВЕС. БОЛЬШЕ ВОЗМОЖНОСТЕЙ.</div><h1>Большие идеи.<br><span>Лёгкие изображения.</span></h1><p>Сжимайте целые папки за один раз. Ваши изображения<br class="desktop"> обрабатываются на компьютере и остаются у вас.</p></section>
+<div class="workspace"><section class="files-panel">
+<label class="drop" id="drop" tabindex="0" role="button" aria-label="Выбрать изображения"><input id="files" type="file" multiple accept=".jpg,.jpeg,.png,.webp,.bmp,.tif,.tiff" hidden><span class="upload-icon">↥</span><strong>Перетащите изображения сюда</strong><span>или <em>выберите файлы</em> на компьютере</span><small>JPG, PNG, WebP, BMP, TIFF · до 50 МБ на файл · 100+ за раз</small></label>
+<div class="queue-head"><h2>Ваши изображения <span id="count">0</span></h2><button class="text-button" id="clear">Очистить</button></div>
+<div id="empty"><span>▧</span><p>Здесь появятся ваши изображения</p><small>Добавьте первую пачку — остальное возьмём на себя.</small></div>
+<div id="list" aria-live="polite"></div>
+</section>
+<aside><div class="settings-head"><h2>Настройки сжатия</h2><span>↗</span></div>
+<label class="field">Формат результата<select id="format"><option value="webp">WebP — компактный и универсальный</option><option value="jpg">JPEG — для фотографий</option><option value="png">PNG — без потерь</option></select></label>
+<div class="field"><div class="label-row"><label for="quality">Качество</label><output id="quality-value">80%</output></div><input id="quality" type="range" min="1" max="100" value="80"><div class="range-labels"><span>Меньше размер</span><span>Больше деталей</span></div></div>
+<label class="field">Максимальная сторона<select id="size"><option value="0">Оригинальный размер</option><option value="1280">1280 px</option><option value="1920">1920 px · Full HD</option><option value="2560">2560 px</option><option value="3840">3840 px · 4K</option></select></label>
+<label class="check"><input type="checkbox" id="keep" checked><span>Не увеличивать вес<small>Сохранить оригинал, если результат больше и размер не менялся.</small></span></label>
+<div class="note" id="note">WebP сохраняет прозрачность и хорошо подходит для сайтов и повседневных задач.</div>
+<button id="start" class="primary" disabled>Сжать изображения <span>→</span></button><button id="stop" class="secondary" hidden>Остановить очередь</button>
+<p class="privacy">⌁ Без загрузки в облако</p></aside></div>
+<section class="summary" id="summary" hidden><div><small id="progress-label">Готово</small><strong id="savings"></strong></div><progress id="progress" max="100" value="0"></progress><button class="primary" id="download" disabled>Скачать ZIP ↓</button></section>
+<p id="message" role="status"></p>
+<footer><span>Сделано легче. С помощью FFmpeg.</span><span>Локальная обработка · Никаких подписок</span></footer>
+</main></body></html>
